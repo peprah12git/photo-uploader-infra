@@ -36,7 +36,7 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub ecs-java-web-app-artifacts-${AWS::AccountId}
+      BucketName: !Sub photo-uploader-artifacts-${AWS::AccountId}
       VersioningConfiguration:
         Status: Enabled
       BucketEncryption:
@@ -50,9 +50,9 @@ Resources:
         RestrictPublicBuckets: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-artifacts
+          Value: photo-uploader-artifacts
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -60,11 +60,11 @@ Resources:
   CodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: ecs-java-web-app-codedeploy
+      ApplicationName: photo-uploader-codedeploy
       ComputePlatform: ECS
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -72,7 +72,7 @@ Resources:
   CodeDeployRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ecs-java-web-app-codedeploy-role
+      RoleName: photo-uploader-codedeploy-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -84,7 +84,7 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -93,7 +93,7 @@ Resources:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
       ApplicationName: !Ref CodeDeployApplication
-      DeploymentGroupName: ecs-java-web-app-deployment-group
+      DeploymentGroupName: photo-uploader-deployment-group
       ServiceRoleArn: !GetAtt CodeDeployRole.Arn
       DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
       DeploymentStyle:
@@ -122,7 +122,7 @@ Resources:
               - Name: !Select [1, !Split ["/", !Select [5, !Split [":", !Ref GreenTargetGroupArn]]]]
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -130,7 +130,7 @@ Resources:
   CodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ecs-java-web-app-codepipeline-role
+      RoleName: photo-uploader-codepipeline-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -182,7 +182,7 @@ Resources:
                 Resource: "*"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -190,7 +190,7 @@ Resources:
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: ecs-java-web-app-pipeline
+      Name: photo-uploader-pipeline
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
@@ -251,7 +251,7 @@ Resources:
   EventBridgeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ecs-java-web-app-eventbridge-role
+      RoleName: photo-uploader-eventbridge-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -267,10 +267,10 @@ Resources:
               - Effect: Allow
                 Action:
                   - codepipeline:StartPipelineExecution
-                Resource: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:ecs-java-web-app-pipeline
+                Resource: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:photo-uploader-pipeline
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -278,7 +278,7 @@ Resources:
   EventBridgeRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: ecs-java-web-app-ecr-push-rule
+      Name: photo-uploader-ecr-push-rule
       Description: Triggers CodePipeline when a new image is pushed to ECR
       EventPattern:
         source:
@@ -296,7 +296,7 @@ Resources:
             - latest
       State: ENABLED
       Targets:
-        - Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:ecs-java-web-app-pipeline
+        - Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:photo-uploader-pipeline
           Id: CodePipelineTarget
           RoleArn: !GetAtt EventBridgeRole.Arn
 
@@ -305,22 +305,22 @@ Outputs:
     Description: CodeDeploy Application Name
     Value: !Ref CodeDeployApplication
     Export:
-      Name: CodeDeployApplicationName
+      Name: photo-uploader-CodeDeployApplicationName
 
   CodeDeployDeploymentGroupName:
     Description: CodeDeploy Deployment Group Name
     Value: !Ref CodeDeployDeploymentGroup
     Export:
-      Name: CodeDeployDeploymentGroupName
+      Name: photo-uploader-CodeDeployDeploymentGroupName
 
   CodePipelineName:
     Description: CodePipeline Name
     Value: !Ref CodePipeline
     Export:
-      Name: CodePipelineName
+      Name: photo-uploader-CodePipelineName
 
   ArtifactBucketName:
     Description: Artifact Bucket Name
     Value: !Ref ArtifactBucket
     Export:
-      Name: ArtifactBucketName
+      Name: photo-uploader-ArtifactBucketName

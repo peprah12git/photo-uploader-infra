@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECR Repository for ECS Java Web App
+Description: ECR Repository for Photo Uploader
 
 Resources:
   ECRRepository:
     Type: AWS::ECR::Repository
     DeletionPolicy: Retain
     Properties:
-      RepositoryName: ecs-java-web-app
+      RepositoryName: photo-uploader
       ImageScanningConfiguration:
         ScanOnPush: true
       ImageTagMutability: MUTABLE
@@ -32,7 +32,7 @@ Resources:
           }
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: Environment
           Value: production
         - Key: ManagedBy
@@ -41,12 +41,12 @@ Resources:
 Outputs:
   ECRRepositoryUri:
     Description: ECR Repository URI
-    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ecs-java-web-app"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/photo-uploader"
     Export:
-      Name: ECRRepositoryUri
+      Name: photo-uploader-ECRRepositoryUri
 
   ECRRepositoryName:
     Description: ECR Repository Name
     Value: !Ref ECRRepository
     Export:
-      Name: ECRRepositoryName
+      Name: photo-uploader-ECRRepositoryName

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Security Groups for ALB and ECS Tasks
+Description: Security Groups for ALB, ECS Tasks, RDS and VPC Endpoints
 
 Parameters:
   VPCId:
@@ -11,7 +11,7 @@ Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: ecs-java-web-app-alb-sg
+      GroupName: photo-uploader-alb-sg
       GroupDescription: Security group for Application Load Balancer
       VpcId: !Ref VPCId
       SecurityGroupIngress:
@@ -33,9 +33,9 @@ Resources:
           Description: Allow outbound traffic to ECS tasks
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-alb-sg
+          Value: photo-uploader-alb-sg
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -43,7 +43,7 @@ Resources:
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: ecs-java-web-app-ecs-sg
+      GroupName: photo-uploader-ecs-sg
       GroupDescription: Security group for ECS Tasks
       VpcId: !Ref VPCId
       SecurityGroupIngress:
@@ -60,9 +60,30 @@ Resources:
           Description: Allow all outbound traffic
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-ecs-sg
+          Value: photo-uploader-ecs-sg
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── RDS Security Group ────────────────────────────────────────
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: photo-uploader-rds-sg
+      GroupDescription: Security group for RDS PostgreSQL
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ECSSecurityGroup
+          Description: Allow PostgreSQL traffic from ECS tasks only
+      Tags:
+        - Key: Name
+          Value: photo-uploader-rds-sg
+        - Key: Project
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -70,7 +91,7 @@ Resources:
   VPCEndpointSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: ecs-java-web-app-vpce-sg
+      GroupName: photo-uploader-vpce-sg
       GroupDescription: Security group for VPC Endpoints
       VpcId: !Ref VPCId
       SecurityGroupIngress:
@@ -81,9 +102,9 @@ Resources:
           Description: Allow HTTPS traffic from ECS tasks to VPC Endpoints
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-vpce-sg
+          Value: photo-uploader-vpce-sg
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -92,16 +113,22 @@ Outputs:
     Description: ALB Security Group ID
     Value: !Ref ALBSecurityGroup
     Export:
-      Name: ALBSecurityGroupId
+      Name: photo-uploader-ALBSecurityGroupId
 
   ECSSecurityGroupId:
     Description: ECS Security Group ID
     Value: !Ref ECSSecurityGroup
     Export:
-      Name: ECSSecurityGroupId
+      Name: photo-uploader-ECSSecurityGroupId
+
+  RDSSecurityGroupId:
+    Description: RDS Security Group ID
+    Value: !Ref RDSSecurityGroup
+    Export:
+      Name: photo-uploader-RDSSecurityGroupId
 
   VPCEndpointSecurityGroupId:
     Description: VPC Endpoint Security Group ID
     Value: !Ref VPCEndpointSecurityGroup
     Export:
-      Name: VPCEndpointSecurityGroupId
+      Name: photo-uploader-VPCEndpointSecurityGroupId

@@ -9,14 +9,38 @@ Parameters:
 
   GitHubRepo:
     Type: String
-    Default: ecs-java-web-app
+    Default: photo-uploader
     Description: GitHub repository name
 
+  CreateOIDCProvider:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Set to false if OIDC provider already exists in this account
+
+Conditions:
+  ShouldCreateOIDCProvider: !Equals [!Ref CreateOIDCProvider, 'true']
+
 Resources:
+  # ─── GitHub OIDC Provider ──────────────────────────────────────
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: ShouldCreateOIDCProvider
+    DeletionPolicy: Retain
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  # ─── GitHub Actions App Role ───────────────────────────────────
   GitHubActionsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: GitHubActionsECRRole
+      RoleName: PhotoUploaderGitHubActionsRole
       Description: Role assumed by GitHub Actions to push images to ECR
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -50,25 +74,26 @@ Resources:
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
                   - ecr:PutImage
-                Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/ecs-java-web-app"
+                Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/photo-uploader"
               - Sid: S3ArtifactUpload
                 Effect: Allow
                 Action:
                   - s3:PutObject
                   - s3:GetObject
-                Resource: !Sub "arn:aws:s3:::ecs-java-web-app-artifacts-${AWS::AccountId}/templates/*"
+                Resource: !Sub "arn:aws:s3:::photo-uploader-artifacts-${AWS::AccountId}/templates/*"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: Environment
           Value: production
         - Key: ManagedBy
           Value: CloudFormation
 
+  # ─── GitHub Actions Infra Role ─────────────────────────────────
   GitHubActionsInfraRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: GitHubActionsInfraRole
+      RoleName: PhotoUploaderGitHubActionsInfraRole
       Description: Role assumed by GitHub Actions in infra repo to sync templates to S3
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -81,7 +106,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOrg}/ecs-java-infras:*"
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOrg}/photo-uploader-infra:*"
       Policies:
         - PolicyName: S3TemplatesSyncPolicy
           PolicyDocument:
@@ -94,11 +119,11 @@ Resources:
                   - s3:DeleteObject
                   - s3:ListBucket
                 Resource:
-                  - arn:aws:s3:::ecs-java-web-app-cfn-templates
-                  - arn:aws:s3:::ecs-java-web-app-cfn-templates/*
+                  - !Sub "arn:aws:s3:::photo-uploader-cfn-templates-${AWS::AccountId}"
+                  - !Sub "arn:aws:s3:::photo-uploader-cfn-templates-${AWS::AccountId}/*"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: Environment
           Value: production
         - Key: ManagedBy
@@ -109,10 +134,10 @@ Outputs:
     Description: IAM Role ARN for GitHub Actions
     Value: !GetAtt GitHubActionsRole.Arn
     Export:
-      Name: GitHubActionsRoleArn
+      Name: photo-uploader-GitHubActionsRoleArn
 
   GitHubActionsInfraRoleArn:
     Description: IAM Role ARN for GitHub Actions Infra Repo
     Value: !GetAtt GitHubActionsInfraRole.Arn
     Export:
-      Name: GitHubActionsInfraRoleArn
+      Name: photo-uploader-GitHubActionsInfraRoleArn

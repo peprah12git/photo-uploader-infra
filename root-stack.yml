@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Root Stack for ECS Java Web App Infrastructure
+Description: Root Stack for Photo Uploader Infrastructure
 
 Parameters:
   GitHubOrg:
@@ -9,18 +9,37 @@ Parameters:
 
   GitHubRepo:
     Type: String
-    Default: ecs-java-web-app
+    Default: photo-uploader
     Description: GitHub repository name
+
+  DBName:
+    Type: String
+    Default: photouploader
+    Description: Database name
+
+  DBUsername:
+    Type: String
+    Default: adminuser
+    Description: Database master username
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: Database master password
+
+  CFNTemplatesBucket:
+    Type: String
+    Description: S3 bucket name for CloudFormation templates
 
 Resources:
   # ─── ECR Stack ─────────────────────────────────────────────────
   ECRStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/ecr.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/ecr.yml"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -28,13 +47,13 @@ Resources:
   OIDCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/oidc.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/oidc.yml"
       Parameters:
         GitHubOrg: !Ref GitHubOrg
         GitHubRepo: !Ref GitHubRepo
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -42,10 +61,10 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/vpc.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/vpc.yml"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -54,12 +73,12 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: VPCStack
     Properties:
-      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/security-groups.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/security-groups.yml"
       Parameters:
-        VPCId: !GetAtt VPCStack.Outputs.VPCId
+        VPCId: !GetAtt VPCStack.Outputs.photo-uploader-VPCId
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -68,16 +87,47 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: SecurityGroupsStack
     Properties:
-      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/vpc-endpoints.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/vpc-endpoints.yml"
       Parameters:
-        VPCId: !GetAtt VPCStack.Outputs.VPCId
-        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.PrivateSubnet1Id
-        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.PrivateSubnet2Id
-        PrivateRouteTableId: !GetAtt VPCStack.Outputs.PrivateRouteTableId
-        VPCEndpointSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.VPCEndpointSecurityGroupId
+        VPCId: !GetAtt VPCStack.Outputs.photo-uploader-VPCId
+        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.photo-uploader-PrivateSubnet1Id
+        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.photo-uploader-PrivateSubnet2Id
+        PrivateRouteTableId: !GetAtt VPCStack.Outputs.photo-uploader-PrivateRouteTableId
+        VPCEndpointSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.photo-uploader-VPCEndpointSecurityGroupId
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── S3 and CloudFront Stack ───────────────────────────────────
+  S3CloudFrontStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/s3-cloudfront.yml"
+      Tags:
+        - Key: Project
+          Value: photo-uploader
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── RDS Stack ─────────────────────────────────────────────────
+  RDSStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SecurityGroupsStack
+    Properties:
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/rds.yml"
+      Parameters:
+        VPCId: !GetAtt VPCStack.Outputs.photo-uploader-VPCId
+        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.photo-uploader-PrivateSubnet1Id
+        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.photo-uploader-PrivateSubnet2Id
+        RDSSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.photo-uploader-RDSSecurityGroupId
+        DBName: !Ref DBName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
+      Tags:
+        - Key: Project
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -86,34 +136,43 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: VPCEndpointsStack
     Properties:
-      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/alb.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/alb.yml"
       Parameters:
-        VPCId: !GetAtt VPCStack.Outputs.VPCId
-        PublicSubnet1Id: !GetAtt VPCStack.Outputs.PublicSubnet1Id
-        PublicSubnet2Id: !GetAtt VPCStack.Outputs.PublicSubnet2Id
-        ALBSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.ALBSecurityGroupId
+        VPCId: !GetAtt VPCStack.Outputs.photo-uploader-VPCId
+        PublicSubnet1Id: !GetAtt VPCStack.Outputs.photo-uploader-PublicSubnet1Id
+        PublicSubnet2Id: !GetAtt VPCStack.Outputs.photo-uploader-PublicSubnet2Id
+        ALBSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.photo-uploader-ALBSecurityGroupId
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
   # ─── ECS Stack ─────────────────────────────────────────────────
   ECSStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: ALBStack
+    DependsOn:
+      - ALBStack
+      - RDSStack
+      - S3CloudFrontStack
     Properties:
-      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/ecs.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/ecs.yml"
       Parameters:
-        VPCId: !GetAtt VPCStack.Outputs.VPCId
-        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.PrivateSubnet1Id
-        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.PrivateSubnet2Id
-        ECSSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.ECSSecurityGroupId
-        BlueTargetGroupArn: !GetAtt ALBStack.Outputs.BlueTargetGroupArn
-        ECRRepositoryUri: !GetAtt ECRStack.Outputs.ECRRepositoryUri
+        VPCId: !GetAtt VPCStack.Outputs.photo-uploader-VPCId
+        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.photo-uploader-PrivateSubnet1Id
+        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.photo-uploader-PrivateSubnet2Id
+        ECSSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.photo-uploader-ECSSecurityGroupId
+        BlueTargetGroupArn: !GetAtt ALBStack.Outputs.photo-uploader-BlueTargetGroupArn
+        ECRRepositoryUri: !GetAtt ECRStack.Outputs.photo-uploader-ECRRepositoryUri
+        S3BucketName: !GetAtt S3CloudFrontStack.Outputs.photo-uploader-PhotoBucketName
+        CloudFrontDomain: !GetAtt S3CloudFrontStack.Outputs.photo-uploader-CloudFrontDomainName
+        DBHost: !GetAtt RDSStack.Outputs.photo-uploader-DBInstanceEndpoint
+        DBName: !Ref DBName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -122,42 +181,50 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: ECSStack
     Properties:
-      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/pipeline.yml
+      TemplateURL: !Sub "https://s3.eu-central-1.amazonaws.com/${CFNTemplatesBucket}/templates/pipeline.yml"
       Parameters:
-        ECSClusterName: !GetAtt ECSStack.Outputs.ECSClusterName
-        ECSServiceName: !GetAtt ECSStack.Outputs.ECSServiceName
-        BlueTargetGroupArn: !GetAtt ALBStack.Outputs.BlueTargetGroupArn
-        GreenTargetGroupArn: !GetAtt ALBStack.Outputs.GreenTargetGroupArn
-        HTTPListenerArn: !GetAtt ALBStack.Outputs.HTTPListenerArn
-        TestListenerArn: !GetAtt ALBStack.Outputs.TestListenerArn
-        ECRRepositoryName: !GetAtt ECRStack.Outputs.ECRRepositoryName
+        ECSClusterName: !GetAtt ECSStack.Outputs.photo-uploader-ECSClusterName
+        ECSServiceName: !GetAtt ECSStack.Outputs.photo-uploader-ECSServiceName
+        BlueTargetGroupArn: !GetAtt ALBStack.Outputs.photo-uploader-BlueTargetGroupArn
+        GreenTargetGroupArn: !GetAtt ALBStack.Outputs.photo-uploader-GreenTargetGroupArn
+        HTTPListenerArn: !GetAtt ALBStack.Outputs.photo-uploader-HTTPListenerArn
+        TestListenerArn: !GetAtt ALBStack.Outputs.photo-uploader-TestListenerArn
+        ECRRepositoryName: !GetAtt ECRStack.Outputs.photo-uploader-ECRRepositoryName
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
 Outputs:
   ECRRepositoryUri:
     Description: ECR Repository URI
-    Value: !GetAtt ECRStack.Outputs.ECRRepositoryUri
+    Value: !GetAtt ECRStack.Outputs.photo-uploader-ECRRepositoryUri
 
   GitHubActionsRoleArn:
     Description: IAM Role ARN for GitHub Actions
-    Value: !GetAtt OIDCStack.Outputs.GitHubActionsRoleArn
+    Value: !GetAtt OIDCStack.Outputs.photo-uploader-GitHubActionsRoleArn
 
   ALBDNSName:
-    Description: ALB DNS Name - Application Endpoint
-    Value: !GetAtt ALBStack.Outputs.ALBDNSName
+    Description: ALB DNS Name
+    Value: !GetAtt ALBStack.Outputs.photo-uploader-ALBDNSName
+
+  CloudFrontDomainName:
+    Description: CloudFront Domain Name
+    Value: !GetAtt S3CloudFrontStack.Outputs.photo-uploader-CloudFrontDomainName
+
+  DBEndpoint:
+    Description: RDS PostgreSQL Endpoint
+    Value: !GetAtt RDSStack.Outputs.photo-uploader-DBInstanceEndpoint
 
   ECSClusterName:
     Description: ECS Cluster Name
-    Value: !GetAtt ECSStack.Outputs.ECSClusterName
+    Value: !GetAtt ECSStack.Outputs.photo-uploader-ECSClusterName
 
   CodePipelineName:
     Description: CodePipeline Name
-    Value: !GetAtt PipelineStack.Outputs.CodePipelineName
+    Value: !GetAtt PipelineStack.Outputs.photo-uploader-CodePipelineName
 
   GitHubActionsInfraRoleArn:
     Description: IAM Role ARN for GitHub Actions Infra Repo
-    Value: !GetAtt OIDCStack.Outputs.GitHubActionsInfraRoleArn
+    Value: !GetAtt OIDCStack.Outputs.photo-uploader-GitHubActionsInfraRoleArn

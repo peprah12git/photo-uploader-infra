@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 Bucket and CloudFront Distribution for Photo Uploader
+
+Resources:
+  # ─── S3 Photo Bucket ───────────────────────────────────────────
+  PhotoBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub photo-uploader-photos-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+            AllowedOrigins:
+              - '*'
+            MaxAge: 3000
+      Tags:
+        - Key: Name
+          Value: photo-uploader-photos
+        - Key: Project
+          Value: photo-uploader
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── CloudFront Origin Access Control ──────────────────────────
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: photo-uploader-oac
+        Description: OAC for photo uploader S3 bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ─── CloudFront Distribution ───────────────────────────────────
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: Photo Uploader CloudFront Distribution
+        Enabled: true
+        PriceClass: PriceClass_200
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt PhotoBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        HttpVersion: http2
+        IPV6Enabled: true
+      Tags:
+        - Key: Name
+          Value: photo-uploader-distribution
+        - Key: Project
+          Value: photo-uploader
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── S3 Bucket Policy ──────────────────────────────────────────
+  PhotoBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PhotoBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${PhotoBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+Outputs:
+  PhotoBucketName:
+    Description: S3 Photo Bucket Name
+    Value: !Ref PhotoBucket
+    Export:
+      Name: photo-uploader-PhotoBucketName
+
+  PhotoBucketArn:
+    Description: S3 Photo Bucket ARN
+    Value: !GetAtt PhotoBucket.Arn
+    Export:
+      Name: photo-uploader-PhotoBucketArn
+
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: photo-uploader-CloudFrontDistributionId
+
+  CloudFrontDomainName:
+    Description: CloudFront Domain Name
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: photo-uploader-CloudFrontDomainName

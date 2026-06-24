@@ -38,9 +38,9 @@ Resources:
       PrivateDnsEnabled: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-ecr-api-endpoint
+          Value: photo-uploader-ecr-api-endpoint
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -59,9 +59,9 @@ Resources:
       PrivateDnsEnabled: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-ecr-dkr-endpoint
+          Value: photo-uploader-ecr-dkr-endpoint
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -76,9 +76,9 @@ Resources:
         - !Ref PrivateRouteTableId
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-s3-endpoint
+          Value: photo-uploader-s3-endpoint
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -97,9 +97,9 @@ Resources:
       PrivateDnsEnabled: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-cloudwatch-logs-endpoint
+          Value: photo-uploader-cloudwatch-logs-endpoint
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -108,22 +108,22 @@ Outputs:
     Description: ECR API Endpoint ID
     Value: !Ref ECRAPIEndpoint
     Export:
-      Name: ECRAPIEndpointId
+      Name: photo-uploader-ECRAPIEndpointId
 
   ECRDKREndpointId:
     Description: ECR DKR Endpoint ID
     Value: !Ref ECRDKREndpoint
     Export:
-      Name: ECRDKREndpointId
+      Name: photo-uploader-ECRDKREndpointId
 
   S3EndpointId:
     Description: S3 Endpoint ID
     Value: !Ref S3Endpoint
     Export:
-      Name: S3EndpointId
+      Name: photo-uploader-S3EndpointId
 
   CloudWatchLogsEndpointId:
     Description: CloudWatch Logs Endpoint ID
     Value: !Ref CloudWatchLogsEndpoint
     Export:
-      Name: CloudWatchLogsEndpointId
+      Name: photo-uploader-CloudWatchLogsEndpointId

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC, Subnets, IGW, NAT Gateway and Route Tables
+Description: VPC, Subnets, IGW and Route Tables
 
 Resources:
   # ─── VPC ───────────────────────────────────────────────────────
@@ -11,9 +11,9 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-vpc
+          Value: photo-uploader-vpc
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -23,9 +23,9 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-igw
+          Value: photo-uploader-igw
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -45,9 +45,9 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-public-subnet-1
+          Value: photo-uploader-public-subnet-1
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -60,9 +60,9 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-public-subnet-2
+          Value: photo-uploader-public-subnet-2
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -76,9 +76,9 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-private-subnet-1
+          Value: photo-uploader-private-subnet-1
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -91,9 +91,9 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-private-subnet-2
+          Value: photo-uploader-private-subnet-2
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -104,13 +104,12 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-public-rt
+          Value: photo-uploader-public-rt
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
-#sends all public outbound traffic to the ing
   PublicRoute:
     Type: AWS::EC2::Route
     DependsOn: InternetGatewayAttachment
@@ -137,9 +136,9 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-private-rt
+          Value: photo-uploader-private-rt
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -160,34 +159,34 @@ Outputs:
     Description: VPC ID
     Value: !Ref VPC
     Export:
-      Name: VPCId
+      Name: photo-uploader-VPCId
 
   PrivateRouteTableId:
     Description: Private Route Table ID
     Value: !Ref PrivateRouteTable
     Export:
-      Name: PrivateRouteTableId
+      Name: photo-uploader-PrivateRouteTableId
 
   PublicSubnet1Id:
     Description: Public Subnet 1 ID
     Value: !Ref PublicSubnet1
     Export:
-      Name: PublicSubnet1Id
+      Name: photo-uploader-PublicSubnet1Id
 
   PublicSubnet2Id:
     Description: Public Subnet 2 ID
     Value: !Ref PublicSubnet2
     Export:
-      Name: PublicSubnet2Id
+      Name: photo-uploader-PublicSubnet2Id
 
   PrivateSubnet1Id:
     Description: Private Subnet 1 ID
     Value: !Ref PrivateSubnet1
     Export:
-      Name: PrivateSubnet1Id
+      Name: photo-uploader-PrivateSubnet1Id
 
   PrivateSubnet2Id:
     Description: Private Subnet 2 ID
     Value: !Ref PrivateSubnet2
     Export:
-      Name: PrivateSubnet2Id
+      Name: photo-uploader-PrivateSubnet2Id

@@ -26,12 +26,37 @@ Parameters:
     Type: String
     Description: ECR Repository URI
 
+  S3BucketName:
+    Type: String
+    Description: S3 Bucket Name for photo storage
+
+  CloudFrontDomain:
+    Type: String
+    Description: CloudFront Domain for serving images
+
+  DBHost:
+    Type: String
+    Description: RDS PostgreSQL endpoint
+
+  DBName:
+    Type: String
+    Description: RDS Database name
+
+  DBUsername:
+    Type: String
+    Description: RDS Database username
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Description: RDS Database password
+
 Resources:
   # ─── ECS Cluster ───────────────────────────────────────────────
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: ecs-java-web-app-cluster
+      ClusterName: photo-uploader-cluster
       CapacityProviders:
         - FARGATE
         - FARGATE_SPOT
@@ -43,9 +68,9 @@ Resources:
           Value: enabled
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-cluster
+          Value: photo-uploader-cluster
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -53,11 +78,11 @@ Resources:
   CloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /ecs/ecs-java-web-app
+      LogGroupName: /ecs/photo-uploader
       RetentionInDays: 30
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -65,7 +90,7 @@ Resources:
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ecs-java-web-app-task-execution-role
+      RoleName: photo-uploader-task-execution-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -94,7 +119,7 @@ Resources:
                 Resource: "*"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -102,7 +127,7 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ecs-java-web-app-task-role
+      RoleName: photo-uploader-task-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -120,9 +145,19 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "*"
+              - Sid: S3PhotoAccess
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3BucketName}"
+                  - !Sub "arn:aws:s3:::${S3BucketName}/*"
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -130,7 +165,7 @@ Resources:
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: ecs-java-web-app-task
+      Family: photo-uploader-task
       Cpu: '256'
       Memory: '512'
       NetworkMode: awsvpc
@@ -139,16 +174,31 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
       TaskRoleArn: !GetAtt ECSTaskRole.Arn
       ContainerDefinitions:
-        - Name: ecs-java-web-app
+        - Name: photo-uploader
           Image: !Sub "${ECRRepositoryUri}:latest"
           PortMappings:
             - ContainerPort: 8080
               Protocol: tcp
           Essential: true
+          Environment:
+            - Name: S3_BUCKET_NAME
+              Value: !Ref S3BucketName
+            - Name: CLOUDFRONT_DOMAIN
+              Value: !Ref CloudFrontDomain
+            - Name: DB_HOST
+              Value: !Ref DBHost
+            - Name: DB_NAME
+              Value: !Ref DBName
+            - Name: DB_USERNAME
+              Value: !Ref DBUsername
+            - Name: DB_PASSWORD
+              Value: !Ref DBPassword
+            - Name: AWS_REGION
+              Value: !Sub "${AWS::Region}"
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: /ecs/ecs-java-web-app
+              awslogs-group: /ecs/photo-uploader
               awslogs-region: !Sub "${AWS::Region}"
               awslogs-stream-prefix: ecs
           HealthCheck:
@@ -161,7 +211,7 @@ Resources:
             StartPeriod: 60
       Tags:
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -169,7 +219,7 @@ Resources:
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: ecs-java-web-app-service
+      ServiceName: photo-uploader-service
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: 1
@@ -183,7 +233,7 @@ Resources:
             - !Ref ECSSecurityGroupId
           AssignPublicIp: DISABLED
       LoadBalancers:
-        - ContainerName: ecs-java-web-app
+        - ContainerName: photo-uploader
           ContainerPort: 8080
           TargetGroupArn: !Ref BlueTargetGroupArn
       DeploymentController:
@@ -191,9 +241,9 @@ Resources:
       HealthCheckGracePeriodSeconds: 60
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-service
+          Value: photo-uploader-service
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -212,7 +262,7 @@ Resources:
   AutoScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
-      PolicyName: ecs-java-web-app-cpu-scaling-policy
+      PolicyName: photo-uploader-cpu-scaling-policy
       PolicyType: TargetTrackingScaling
       ScalingTargetId: !Ref AutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:
@@ -227,28 +277,28 @@ Outputs:
     Description: ECS Cluster Name
     Value: !Ref ECSCluster
     Export:
-      Name: ECSClusterName
+      Name: photo-uploader-ECSClusterName
 
   ECSClusterArn:
     Description: ECS Cluster ARN
     Value: !GetAtt ECSCluster.Arn
     Export:
-      Name: ECSClusterArn
+      Name: photo-uploader-ECSClusterArn
 
   ECSServiceName:
     Description: ECS Service Name
     Value: !GetAtt ECSService.Name
     Export:
-      Name: ECSServiceName
+      Name: photo-uploader-ECSServiceName
 
   ECSTaskDefinitionArn:
     Description: ECS Task Definition ARN
     Value: !Ref ECSTaskDefinition
     Export:
-      Name: ECSTaskDefinitionArn
+      Name: photo-uploader-ECSTaskDefinitionArn
 
   ECSTaskExecutionRoleArn:
     Description: ECS Task Execution Role ARN
     Value: !GetAtt ECSTaskExecutionRole.Arn
     Export:
-      Name: ECSTaskExecutionRoleArn
+      Name: photo-uploader-ECSTaskExecutionRoleArn

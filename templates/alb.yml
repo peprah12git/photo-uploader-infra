@@ -23,7 +23,7 @@ Resources:
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: ecs-java-web-app-alb
+      Name: photo-uploader-alb
       Scheme: internet-facing
       Type: application
       Subnets:
@@ -38,9 +38,9 @@ Resources:
           Value: 'false'
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-alb
+          Value: photo-uploader-alb
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -48,7 +48,7 @@ Resources:
   BlueTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: ecs-java-web-app-blue-tg
+      Name: photo-uploader-blue-tg
       Port: 8080
       Protocol: HTTP
       TargetType: ip
@@ -63,9 +63,9 @@ Resources:
       UnhealthyThresholdCount: 3
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-blue-tg
+          Value: photo-uploader-blue-tg
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -73,7 +73,7 @@ Resources:
   GreenTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: ecs-java-web-app-green-tg
+      Name: photo-uploader-green-tg
       Port: 8080
       Protocol: HTTP
       TargetType: ip
@@ -88,9 +88,9 @@ Resources:
       UnhealthyThresholdCount: 3
       Tags:
         - Key: Name
-          Value: ecs-java-web-app-green-tg
+          Value: photo-uploader-green-tg
         - Key: Project
-          Value: ecs-java-web-app
+          Value: photo-uploader
         - Key: ManagedBy
           Value: CloudFormation
 
@@ -121,34 +121,34 @@ Outputs:
     Description: ALB ARN
     Value: !Ref ApplicationLoadBalancer
     Export:
-      Name: ALBArn
+      Name: photo-uploader-ALBArn
 
   ALBDNSName:
     Description: ALB DNS Name
     Value: !GetAtt ApplicationLoadBalancer.DNSName
     Export:
-      Name: ALBDNSName
+      Name: photo-uploader-ALBDNSName
 
   BlueTargetGroupArn:
     Description: Blue Target Group ARN
     Value: !Ref BlueTargetGroup
     Export:
-      Name: BlueTargetGroupArn
+      Name: photo-uploader-BlueTargetGroupArn
 
   GreenTargetGroupArn:
     Description: Green Target Group ARN
     Value: !Ref GreenTargetGroup
     Export:
-      Name: GreenTargetGroupArn
+      Name: photo-uploader-GreenTargetGroupArn
 
   HTTPListenerArn:
     Description: HTTP Listener ARN
     Value: !Ref HTTPListener
     Export:
-      Name: HTTPListenerArn
+      Name: photo-uploader-HTTPListenerArn
 
   TestListenerArn:
     Description: Test Listener ARN
     Value: !Ref TestListener
     Export:
-      Name: TestListenerArn
+      Name: photo-uploader-TestListenerArn
