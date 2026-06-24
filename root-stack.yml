@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Root Stack for ECS Java Web App Infrastructure
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Default: peprah12git
+    Description: GitHub organization or username
+
+  GitHubRepo:
+    Type: String
+    Default: ecs-java-web-app
+    Description: GitHub repository name
+
+Resources:
+  # ─── ECR Stack ─────────────────────────────────────────────────
+  ECRStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/ecr.yml
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── OIDC Stack ────────────────────────────────────────────────
+  OIDCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/oidc.yml
+      Parameters:
+        GitHubOrg: !Ref GitHubOrg
+        GitHubRepo: !Ref GitHubRepo
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── VPC Stack ─────────────────────────────────────────────────
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/vpc.yml
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── Security Groups Stack ─────────────────────────────────────
+  SecurityGroupsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPCStack
+    Properties:
+      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/security-groups.yml
+      Parameters:
+        VPCId: !GetAtt VPCStack.Outputs.VPCId
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── VPC Endpoints Stack ───────────────────────────────────────
+  VPCEndpointsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SecurityGroupsStack
+    Properties:
+      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/vpc-endpoints.yml
+      Parameters:
+        VPCId: !GetAtt VPCStack.Outputs.VPCId
+        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.PrivateSubnet1Id
+        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.PrivateSubnet2Id
+        PrivateRouteTableId: !GetAtt VPCStack.Outputs.PrivateRouteTableId
+        VPCEndpointSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.VPCEndpointSecurityGroupId
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── ALB Stack ─────────────────────────────────────────────────
+  ALBStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPCEndpointsStack
+    Properties:
+      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/alb.yml
+      Parameters:
+        VPCId: !GetAtt VPCStack.Outputs.VPCId
+        PublicSubnet1Id: !GetAtt VPCStack.Outputs.PublicSubnet1Id
+        PublicSubnet2Id: !GetAtt VPCStack.Outputs.PublicSubnet2Id
+        ALBSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.ALBSecurityGroupId
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── ECS Stack ─────────────────────────────────────────────────
+  ECSStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: ALBStack
+    Properties:
+      TemplateURL:  https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/ecs.yml
+      Parameters:
+        VPCId: !GetAtt VPCStack.Outputs.VPCId
+        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.PrivateSubnet1Id
+        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.PrivateSubnet2Id
+        ECSSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.ECSSecurityGroupId
+        BlueTargetGroupArn: !GetAtt ALBStack.Outputs.BlueTargetGroupArn
+        ECRRepositoryUri: !GetAtt ECRStack.Outputs.ECRRepositoryUri
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── Pipeline Stack ────────────────────────────────────────────
+  PipelineStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: ECSStack
+    Properties:
+      TemplateURL: https://s3.eu-central-1.amazonaws.com/ecs-java-web-app-cfn-templates/templates/pipeline.yml
+      Parameters:
+        ECSClusterName: !GetAtt ECSStack.Outputs.ECSClusterName
+        ECSServiceName: !GetAtt ECSStack.Outputs.ECSServiceName
+        BlueTargetGroupArn: !GetAtt ALBStack.Outputs.BlueTargetGroupArn
+        GreenTargetGroupArn: !GetAtt ALBStack.Outputs.GreenTargetGroupArn
+        HTTPListenerArn: !GetAtt ALBStack.Outputs.HTTPListenerArn
+        TestListenerArn: !GetAtt ALBStack.Outputs.TestListenerArn
+        ECRRepositoryName: !GetAtt ECRStack.Outputs.ECRRepositoryName
+      Tags:
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  ECRRepositoryUri:
+    Description: ECR Repository URI
+    Value: !GetAtt ECRStack.Outputs.ECRRepositoryUri
+
+  GitHubActionsRoleArn:
+    Description: IAM Role ARN for GitHub Actions
+    Value: !GetAtt OIDCStack.Outputs.GitHubActionsRoleArn
+
+  ALBDNSName:
+    Description: ALB DNS Name - Application Endpoint
+    Value: !GetAtt ALBStack.Outputs.ALBDNSName
+
+  ECSClusterName:
+    Description: ECS Cluster Name
+    Value: !GetAtt ECSStack.Outputs.ECSClusterName
+
+  CodePipelineName:
+    Description: CodePipeline Name
+    Value: !GetAtt PipelineStack.Outputs.CodePipelineName
+
+  GitHubActionsInfraRoleArn:
+    Description: IAM Role ARN for GitHub Actions Infra Repo
+    Value: !GetAtt OIDCStack.Outputs.GitHubActionsInfraRoleArn

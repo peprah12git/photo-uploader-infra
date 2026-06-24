@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Security Groups for ALB and ECS Tasks
+
+Parameters:
+  VPCId:
+    Type: String
+    Description: VPC ID
+
+Resources:
+  # ─── ALB Security Group ────────────────────────────────────────
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ecs-java-web-app-alb-sg
+      GroupDescription: Security group for Application Load Balancer
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTP traffic from internet
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS traffic from internet
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          Description: Allow outbound traffic to ECS tasks
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-alb-sg
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── ECS Security Group ────────────────────────────────────────
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ecs-java-web-app-ecs-sg
+      GroupDescription: Security group for ECS Tasks
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          Description: Allow traffic only from ALB
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-ecs-sg
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── VPC Endpoints Security Group ─────────────────────────────
+  VPCEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ecs-java-web-app-vpce-sg
+      GroupDescription: Security group for VPC Endpoints
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref ECSSecurityGroup
+          Description: Allow HTTPS traffic from ECS tasks to VPC Endpoints
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-vpce-sg
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  ALBSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: ALBSecurityGroupId
+
+  ECSSecurityGroupId:
+    Description: ECS Security Group ID
+    Value: !Ref ECSSecurityGroup
+    Export:
+      Name: ECSSecurityGroupId
+
+  VPCEndpointSecurityGroupId:
+    Description: VPC Endpoint Security Group ID
+    Value: !Ref VPCEndpointSecurityGroup
+    Export:
+      Name: VPCEndpointSecurityGroupId

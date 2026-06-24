@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC Endpoints for ECR, S3 and CloudWatch Logs
+
+Parameters:
+  VPCId:
+    Type: String
+    Description: VPC ID
+
+  PrivateSubnet1Id:
+    Type: String
+    Description: Private Subnet 1 ID
+
+  PrivateSubnet2Id:
+    Type: String
+    Description: Private Subnet 2 ID
+
+  PrivateRouteTableId:
+    Type: String
+    Description: Private Route Table ID
+
+  VPCEndpointSecurityGroupId:
+    Type: String
+    Description: Security Group ID for VPC Endpoints
+
+Resources:
+  # ─── ECR API Endpoint ──────────────────────────────────────────
+  ECRAPIEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPCId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1Id
+        - !Ref PrivateSubnet2Id
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroupId
+      PrivateDnsEnabled: true
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-ecr-api-endpoint
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── ECR DKR Endpoint ──────────────────────────────────────────
+  ECRDKREndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPCId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1Id
+        - !Ref PrivateSubnet2Id
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroupId
+      PrivateDnsEnabled: true
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-ecr-dkr-endpoint
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── S3 Gateway Endpoint ───────────────────────────────────────
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPCId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref PrivateRouteTableId
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-s3-endpoint
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ─── CloudWatch Logs Endpoint ──────────────────────────────────
+  CloudWatchLogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPCId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1Id
+        - !Ref PrivateSubnet2Id
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroupId
+      PrivateDnsEnabled: true
+      Tags:
+        - Key: Name
+          Value: ecs-java-web-app-cloudwatch-logs-endpoint
+        - Key: Project
+          Value: ecs-java-web-app
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  ECRAPIEndpointId:
+    Description: ECR API Endpoint ID
+    Value: !Ref ECRAPIEndpoint
+    Export:
+      Name: ECRAPIEndpointId
+
+  ECRDKREndpointId:
+    Description: ECR DKR Endpoint ID
+    Value: !Ref ECRDKREndpoint
+    Export:
+      Name: ECRDKREndpointId
+
+  S3EndpointId:
+    Description: S3 Endpoint ID
+    Value: !Ref S3Endpoint
+    Export:
+      Name: S3EndpointId
+
+  CloudWatchLogsEndpointId:
+    Description: CloudWatch Logs Endpoint ID
+    Value: !Ref CloudWatchLogsEndpoint
+    Export:
+      Name: CloudWatchLogsEndpointId

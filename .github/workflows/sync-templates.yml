@@ -1,0 +1,28 @@
+name: Sync CloudFormation Templates to S3
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  sync-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Sync templates to S3
+        run: |
+          aws s3 sync ./templates s3://ecs-java-web-app-cfn-templates/templates/ --delete
+          aws s3 cp root-stack.yml s3://ecs-java-web-app-cfn-templates/root-stack.yml
