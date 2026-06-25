@@ -5,7 +5,7 @@ Resources:
   # ─── S3 Photo Bucket ───────────────────────────────────────────
   PhotoBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
+#    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub photo-uploader-photos-${AWS::AccountId}
       VersioningConfiguration:
