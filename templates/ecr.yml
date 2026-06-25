@@ -4,7 +4,7 @@ Description: ECR Repository for Photo Uploader
 Resources:
   ECRRepository:
     Type: AWS::ECR::Repository
-    DeletionPolicy: Retain
+#    DeletionPolicy: Retain
     Properties:
       RepositoryName: photo-uploader
       ImageScanningConfiguration:
