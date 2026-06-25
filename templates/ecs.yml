@@ -201,14 +201,6 @@ Resources:
               awslogs-group: /ecs/photo-uploader
               awslogs-region: !Sub "${AWS::Region}"
               awslogs-stream-prefix: ecs
-          HealthCheck:
-            Command:
-              - CMD-SHELL
-              - curl -f http://localhost:8080/health || exit 1
-            Interval: 30
-            Timeout: 5
-            Retries: 3
-            StartPeriod: 60
       Tags:
         - Key: Project
           Value: photo-uploader
