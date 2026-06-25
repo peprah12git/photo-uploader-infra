@@ -31,6 +31,14 @@ Parameters:
     Type: String
     Description: S3 bucket name for CloudFormation templates
 
+  CreateOIDCProvider:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Set to false if OIDC provider already exists in this account
+
 Resources:
   # ─── ECR Stack ─────────────────────────────────────────────────
   ECRStack:
@@ -51,6 +59,7 @@ Resources:
       Parameters:
         GitHubOrg: !Ref GitHubOrg
         GitHubRepo: !Ref GitHubRepo
+        CreateOIDCProvider: !Ref CreateOIDCProvider
       Tags:
         - Key: Project
           Value: photo-uploader
