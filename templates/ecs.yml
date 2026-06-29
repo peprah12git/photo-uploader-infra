@@ -170,8 +170,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: photo-uploader-task
-      Cpu: '256'
-      Memory: '512'
+      Cpu: '512'
+      Memory: '1024'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -234,7 +234,7 @@ Resources:
           TargetGroupArn: !Ref BlueTargetGroupArn
       DeploymentController:
         Type: CODE_DEPLOY
-      HealthCheckGracePeriodSeconds: 60
+      HealthCheckGracePeriodSeconds: 180
       Tags:
         - Key: Name
           Value: photo-uploader-service
