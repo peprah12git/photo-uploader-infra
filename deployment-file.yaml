@@ -1,3 +1,13 @@
 template-file-path: root-stack.yml
-parameters: {}
-tags: {}
+parameters:
+  GitHubOrg: peprah12git
+  GitHubRepo: photo-uploader
+  DBName: photouploader
+  DBUsername: adminuser
+  DBPassword: "{{resolve:secretsmanager:/photo-uploader/db/password:SecretString:password}}"
+  CFNTemplatesBucket: photo-uploader-cfn-templates-904233109505
+  CreateOIDCProvider: 'false'
+tags:
+  Project: photo-uploader
+  ManagedBy: CloudFormation
+  Environment: production
