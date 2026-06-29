@@ -217,7 +217,6 @@ Resources:
     Properties:
       ServiceName: photo-uploader-service
       Cluster: !Ref ECSCluster
-      TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: 0
       LaunchType: FARGATE
       NetworkConfiguration:
@@ -286,12 +285,6 @@ Outputs:
     Value: !GetAtt ECSService.Name
     Export:
       Name: photo-uploader-ECSServiceName
-
-  ECSTaskDefinitionArn:
-    Description: ECS Task Definition ARN
-    Value: !Ref ECSTaskDefinition
-    Export:
-      Name: photo-uploader-ECSTaskDefinitionArn
 
   ECSTaskExecutionRoleArn:
     Description: ECS Task Execution Role ARN
