@@ -12,15 +12,26 @@ permissions:
 jobs:
   sync-templates:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Debug OIDC Token
+        run: |
+          echo "GitHub Repository: $GITHUB_REPOSITORY"
+          echo "GitHub Ref: $GITHUB_REF"
+          echo "GitHub Actor: $GITHUB_ACTOR"
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-central-1
+          audience: sts.amazonaws.com
 
       - name: Sync templates to S3
         run: |
