@@ -154,26 +154,7 @@ Resources:
       SubnetId: !Ref PrivateSubnet2
       RouteTableId: !Ref PrivateRouteTable
 
-  # ─── Secrets Manager Endpoint ──────────────────────────────────
-  SecretsManagerEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcId: !Ref VPCId
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
-      VpcEndpointType: Interface
-      SubnetIds:
-        - !Ref PrivateSubnet1Id
-        - !Ref PrivateSubnet2Id
-      SecurityGroupIds:
-        - !Ref VPCEndpointSecurityGroupId
-      PrivateDnsEnabled: true
-      Tags:
-        - Key: Name
-          Value: photo-uploader-secretsmanager-endpoint
-        - Key: Project
-          Value: photo-uploader
-        - Key: ManagedBy
-          Value: CloudFormation
+
 
 Outputs:
   VPCId:
@@ -212,8 +193,3 @@ Outputs:
     Export:
       Name: photo-uploader-PrivateSubnet2Id
 
-  SecretsManagerEndpointId:
-    Description: Secrets Manager Endpoint ID
-    Value: !Ref SecretsManagerEndpoint
-    Export:
-      Name: photo-uploader-SecretsManagerEndpointId

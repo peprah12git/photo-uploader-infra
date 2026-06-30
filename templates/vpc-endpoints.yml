@@ -103,6 +103,27 @@ Resources:
         - Key: ManagedBy
           Value: CloudFormation
 
+  # ─── Secrets Manager Endpoint ──────────────────────────────────
+  SecretsManagerEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPCId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet1Id
+        - !Ref PrivateSubnet2Id
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroupId
+      PrivateDnsEnabled: true
+      Tags:
+        - Key: Name
+          Value: photo-uploader-secretsmanager-endpoint
+        - Key: Project
+          Value: photo-uploader
+        - Key: ManagedBy
+          Value: CloudFormation
+
 Outputs:
   ECRAPIEndpointId:
     Description: ECR API Endpoint ID
@@ -127,3 +148,9 @@ Outputs:
     Value: !Ref CloudWatchLogsEndpoint
     Export:
       Name: photo-uploader-CloudWatchLogsEndpointId
+
+  SecretsManagerEndpointId:
+    Description: Secrets Manager Endpoint ID
+    Value: !Ref SecretsManagerEndpoint
+    Export:
+      Name: photo-uploader-SecretsManagerEndpointId
