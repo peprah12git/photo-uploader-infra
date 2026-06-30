@@ -54,7 +54,7 @@ Resources:
       TargetType: ip
       VpcId: !Ref VPCId
       HealthCheckEnabled: true
-      HealthCheckPath: /health
+      HealthCheckPath: /actuator/health
       HealthCheckProtocol: HTTP
       HealthCheckPort: '8080'
       HealthCheckIntervalSeconds: 30
@@ -79,7 +79,7 @@ Resources:
       TargetType: ip
       VpcId: !Ref VPCId
       HealthCheckEnabled: true
-      HealthCheckPath: /health
+      HealthCheckPath: /actuator/health
       HealthCheckProtocol: HTTP
       HealthCheckPort: '8080'
       HealthCheckIntervalSeconds: 30
