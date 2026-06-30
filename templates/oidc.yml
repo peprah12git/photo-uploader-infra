@@ -81,6 +81,11 @@ Resources:
                   - s3:PutObject
                   - s3:GetObject
                 Resource: !Sub "arn:aws:s3:::photo-uploader-artifacts-${AWS::AccountId}/templates/*"
+              - Sid: ReadStackExports
+                Effect: Allow
+                Action:
+                  - cloudformation:ListExports
+                Resource: "*"
       Tags:
         - Key: Project
           Value: photo-uploader
