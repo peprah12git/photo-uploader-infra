@@ -217,7 +217,7 @@ Resources:
     Properties:
       ServiceName: photo-uploader-service
       Cluster: !Ref ECSCluster
-      DesiredCount: 1 
+      DesiredCount: 0 
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
