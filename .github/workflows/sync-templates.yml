@@ -35,5 +35,5 @@ jobs:
 
       - name: Sync templates to S3
         run: |
-          aws s3 sync ./templates s3://photo-uploader-cfn-templates-885703011275/templates/ --delete
-          aws s3 cp root-stack.yml s3://photo-uploader-cfn-templates-885703011275/root-stack.yml
+          aws s3 sync ./templates s3://photo-uploader-cfn-templates-825765391206/templates/ --delete
+          aws s3 cp root-stack.yml s3://photo-uploader-cfn-templates-825765391206/root-stack.yml

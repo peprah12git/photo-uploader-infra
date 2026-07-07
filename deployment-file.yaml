@@ -5,8 +5,8 @@ parameters:
   DBName: photouploader
   DBUsername: adminuser
   DBPassword: "{{resolve:secretsmanager:/photo-uploader/db/password:SecretString:password}}"
-  CFNTemplatesBucket: photo-uploader-cfn-templates-885703011275
-  CreateOIDCProvider: 'true'
+  CFNTemplatesBucket: photo-uploader-cfn-templates-825765391206
+  CreateOIDCProvider: 'false'
 tags:
   Project: photo-uploader
   ManagedBy: CloudFormation
