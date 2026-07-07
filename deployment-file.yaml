@@ -1,7 +1,7 @@
 template-file-path: root-stack.yml
 parameters:
   GitHubOrg: peprah12git
-  GitHubRepo: photo-uploader
+  GitHubRepo: Photo-uploader
   DBName: photouploader
   DBUsername: adminuser
   DBPassword: "{{resolve:secretsmanager:/photo-uploader/db/password:SecretString:password}}"
