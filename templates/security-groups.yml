@@ -20,17 +20,6 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
           Description: Allow HTTP traffic from internet
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-          Description: Allow HTTPS traffic from internet
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-          CidrIp: 0.0.0.0/0
-          Description: Allow outbound traffic to ECS tasks
       Tags:
         - Key: Name
           Value: photo-uploader-alb-sg
