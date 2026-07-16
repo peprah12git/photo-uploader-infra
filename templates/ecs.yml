@@ -119,20 +119,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref DBPasswordSecret
-      Tags:
-        - Key: Project
-          Value: photo-uploader
-        - Key: ManagedBy
-          Value: CloudFormation
-
-  # ─── DB Password Secret ────────────────────────────────────────
-  DBPasswordSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: /photo-uploader/db/password
-      Description: RDS PostgreSQL master password for photo-uploader
-      SecretString: !Ref DBPassword
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/photo-uploader/db/password-*"
       Tags:
         - Key: Project
           Value: photo-uploader
@@ -211,7 +198,7 @@ Resources:
               Value: !Sub "${AWS::Region}"
           Secrets:
             - Name: DB_PASSWORD
-              ValueFrom: !Ref DBPasswordSecret
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/photo-uploader/db/password-*"
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -231,7 +218,7 @@ Resources:
       ServiceName: photo-uploader-service
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref ECSTaskDefinition
-      DesiredCount: 0 
+      DesiredCount: 0
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
